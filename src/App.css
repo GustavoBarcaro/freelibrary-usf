@@ -1,0 +1,48 @@
+.app {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+.header {
+  position: relative;
+  height: 90px;
+  border-bottom: 1px solid #000000;
+  margin: 0 25px;
+}
+.header__logo {
+  padding-top: 25px;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
+}
+.content {
+  margin: 20px 25px;
+}
+.books {
+  margin-top: 20px;
+  display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    grid-column-gap: 20px;
+    grid-row-gap: 20px;
+}
+.book {
+  width: 100%;
+  min-width: 450px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  padding: 0px 11px;
+  border: 1px solid #858585;
+  border-radius: 10px;
+  display: flex;
+  font-size: 20px;
+  justify-content: space-between;
+}
+.pagination__section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 45px;
+}
