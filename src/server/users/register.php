@@ -18,5 +18,4 @@
   $sql = "INSERT INTO users (id, username, password, role) VALUES (:id ,:username, :password, :role)";
   $stmt = $conn->prepare($sql);
   $stmt->execute($values);
-  
 ?>
