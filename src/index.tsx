@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import { ChakraProvider } from "@chakra-ui/react";
+import { StoreProvider } from "easy-peasy";
+import AuthStore from "./store/auth";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -10,7 +12,9 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <ChakraProvider>
-      <App />
+      <StoreProvider store={AuthStore}>
+        <App />
+      </StoreProvider>
     </ChakraProvider>
   </React.StrictMode>
 );

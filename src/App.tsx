@@ -1,42 +1,44 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Logo } from "./assets/logo";
+import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import {
   Button,
-  FormControl,
-  FormLabel,
   HStack,
   Input,
   InputGroup,
   InputRightElement,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
+  Tooltip,
   useDisclosure,
   useNumberInput,
 } from "@chakra-ui/react";
-import { SearchIcon, AddIcon, ExternalLinkIcon } from "@chakra-ui/icons";
+import {
+  SearchIcon,
+  AddIcon,
+  ExternalLinkIcon,
+  CheckCircleIcon,
+} from "@chakra-ui/icons";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useStoreState } from "easy-peasy";
+import BookForm from "./components/bookform/BookForm";
+import Header from "./components/Header";
 
 interface Book {
+  id: string;
   name: string;
   filename: string;
+  approved: boolean;
 }
 
 function App() {
+  const auth = useStoreState((state: any) => state.auth);
   const [page, setPage] = useState<number>(1);
   const [books, setBooks] = useState<Book[]>([]);
-  const [bookName, setBookName] = useState<string>("");
+
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
-  const [selectedFile, setSelectedFile] = useState();
+
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const inputRef = useRef(null);
+
   const {
     value,
     getInputProps,
@@ -53,22 +55,13 @@ function App() {
   const inc = getIncrementButtonProps();
   const dec = getDecrementButtonProps();
   const input = getInputProps();
-
+  console.log(auth);
   const handlePages = useCallback(() => {
     const position = (page - 1) * 21;
     const updatedInfo: Book[] = [...books];
     const newBooks = updatedInfo.splice(position, 21);
     setFilteredBooks(newBooks);
   }, [page, books]);
-
-  const changeFileHandler = (event: any) => {
-    if (event?.target.files[0]?.type !== "application/pdf") {
-      toast.error("Apenas arquivos PDF");
-      (inputRef!.current! as any).value = null;
-      return;
-    }
-    setSelectedFile(event?.target.files[0]);
-  };
 
   const fetchBooks = useCallback(() => {
     axios
@@ -105,79 +98,31 @@ function App() {
       setFilteredBooks(updatedBooks);
     }
   };
-  const handleBookSubmission = () => {
-    const formData = new FormData();
-    formData.append("name", bookName!);
-    formData.append("book", selectedFile!);
+
+  const handleBookStatus = (approved: boolean, id: string) => {
     axios
-      .post(`${process.env.REACT_APP_SERVERNAME}/saveBooks.php`, formData, {
-        headers: {
-          "Content-type": "multipart/form-data",
-        },
+      .post(`${process.env.REACT_APP_SERVERNAME}/approveBook.php`, {
+        approved: +approved,
+        id,
       })
       .then(() => {
-        setBookName("");
-        setSelectedFile(undefined);
-        onClose();
-        toast.success("Livro cadastrado com sucesso!");
-        fetchBooks();
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        toast.error(
-          "Erro ao cadastrar esse livro, tente novamente mais tarde."
-        );
+        const updatedBooks = [...filteredBooks];
+        const bookIndex = updatedBooks.findIndex((each) => each.id === id);
+        updatedBooks[bookIndex] = {
+          ...updatedBooks[bookIndex],
+          approved: approved,
+        };
+        setFilteredBooks(updatedBooks);
+        toast.success("Livro atualizado com sucesso!");
       });
   };
 
   return (
     <div className="App">
-      <header className="header">
-        <section className="header__logo">
-          <Logo />
-        </section>
-      </header>
+      <ToastContainer />
+      <Header />
       <main className="content">
-        <Modal isOpen={isOpen} onClose={onClose}>
-          <ToastContainer />
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Cadastro de livro</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <FormControl isRequired>
-                <FormLabel>Titulo do livro</FormLabel>
-                <Input
-                  placeholder="Titulo do livro"
-                  name="name"
-                  value={bookName}
-                  isRequired
-                  onChange={(event: any) => {
-                    setBookName(event.target.value);
-                  }}
-                />
-                <FormLabel>Arquivo</FormLabel>
-                <Input
-                  placeholder="Arquivo"
-                  type="file"
-                  name="file"
-                  ref={inputRef}
-                  onChange={changeFileHandler}
-                  isRequired
-                />
-              </FormControl>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button colorScheme="blue" mr={3} onClick={handleBookSubmission}>
-                Salvar
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+        <BookForm isOpen={isOpen} onClose={onClose} fetchBooks={fetchBooks} />
         <section className="actions">
           <div>
             <Button
@@ -202,14 +147,45 @@ function App() {
         </section>
         <section className="books">
           {filteredBooks?.map((each) => (
-            <div key={Math.random()} className="book">
+            <div key={each.id} className="book">
               <p>{each.name}</p>
-              <a
-                href={`${process.env.REACT_APP_BOOKS}/${each.filename}`}
-                target="_blank"
-              >
-                <ExternalLinkIcon color="#858585" height={30} width={30} />
-              </a>
+              <div className="book__icons">
+                <div>
+                  <Tooltip
+                    label={
+                      each.approved
+                        ? "Livro aprovado por um revisor"
+                        : "Livro ainda não revisado"
+                    }
+                    fontSize="md"
+                  >
+                    <CheckCircleIcon
+                      onClick={() => {
+                        if (auth.role === 1) {
+                          handleBookStatus(!each.approved, each.id);
+                        }
+                      }}
+                      width={6}
+                      height={7}
+                      _hover={
+                        auth.role === 1
+                          ? {
+                              color: each.approved ? "black" : "green",
+                              cursor: "pointer",
+                            }
+                          : {}
+                      }
+                      color={each.approved ? "green" : "black"}
+                    />
+                  </Tooltip>
+                </div>
+                <a
+                  href={`${process.env.REACT_APP_BOOKS}/${each.filename}`}
+                  target="_blank"
+                >
+                  <ExternalLinkIcon color="#858585" height={30} width={30} />
+                </a>
+              </div>
             </div>
           ))}
         </section>

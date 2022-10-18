@@ -8,10 +8,11 @@
   height: 90px;
   border-bottom: 1px solid #000000;
   margin: 0 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.header__logo {
-  padding-top: 25px;
-}
+
 .actions {
   display: flex;
   justify-content: space-between;
@@ -45,4 +46,10 @@
   align-items: center;
   justify-content: center;
   margin-top: 45px;
+}
+.book__icons {
+  display: flex;
+}
+.book__icons div {
+  margin-right: 1rem;
 }
